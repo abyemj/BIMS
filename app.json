@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name": "BIMS",
+    "slug": "Benue-Integrated-Management-System",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/benuelogo2.png",
+    "scheme": "myapp",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.exco.connectmobile"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/benuelogo2.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.BIMS.app"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/benuelogo2.png"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "YOUR_EAS_PROJECT_ID"
+      }
+    }
+  }
+}
+
