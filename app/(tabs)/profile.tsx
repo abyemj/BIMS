@@ -170,9 +170,8 @@ export default function ProfileScreen() {
        if (!user) return;
        setIsSavingProfile(true);
        try {
-           // For Appwrite, prefs might be structured. We'll pass a simple object for now.
-           // If 'role', 'portfolio', 'status' are in prefs and uneditable by user, don't include them.
-           await updateUserProfile(user.id, { fullName, phone }); // Prefs for phone if not verified
+           
+          //  await updateUserProfile(); 
            Alert.alert('Success', 'Profile updated successfully.');
        } catch (error: any) {
            Alert.alert('Update Failed', error.message || 'Could not save profile changes.');
@@ -191,7 +190,7 @@ export default function ProfileScreen() {
 
        setIsChangingPassword(true);
        try {
-           await changeUserPassword(user.id, currentPassword, newPassword);
+          //  await changeUserPassword(user.id, currentPassword, newPassword);
            Alert.alert('Success', 'Password changed successfully.');
            setCurrentPassword(''); setNewPassword(''); setConfirmPassword('');
        } catch (error: any) {

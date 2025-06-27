@@ -7,6 +7,8 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Stack, useRouter, Redirect } from 'expo-router';
 import { databases} from '@/lib/appwrite';
 import { Query } from "appwrite";
+// import { useQuery } from '@tanstack/react-query';
+
 
 const { width } = Dimensions.get('window');
 const CARD_GAP = spacing.md;
@@ -88,7 +90,8 @@ export default function DashboardScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const isAdmin = user && ['Chairman', 'Director'].includes(user.role);
-  const userTenant = user?.tenant; // Get tenant from user object
+  const userTenant = user?.tenant; 
+  
 
   useEffect(() => {
     if (!isAdmin && user) {
