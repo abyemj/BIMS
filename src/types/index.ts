@@ -22,11 +22,20 @@ export interface Meeting {
   status: 'Scheduled' | 'Ongoing' | 'Completed' | 'Archived';
   attendees: string[]; // Array of user IDs
   invitedDelegates?: string[]; // Specific list of delegate IDs invited
-  documents?: { name: string; url: string }[]; // Array of document references
+  // documents?: { name: string; url: string }[]; // Array of document references
+  documents?: MeetingDocument[];
   meetingLink?: string;
   tenant: 'executive' | 'judiciary' | 'legislative';
 }
 
+
+export interface MeetingDocument {
+  name: string;
+  url: string;
+  type?: string; // e.g., 'pdf', 'docx'
+  size?: number; // in bytes
+  fileId?: string; // Appwrite storage file ID
+}
 export interface DocumentItem {
   id: string;
   name: string;

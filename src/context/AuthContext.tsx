@@ -17,9 +17,29 @@ interface AuthContextType {
   fetchUsers: () => Promise<User[]>;
   getChairman: () => Promise<User | undefined>;
   refreshSession: () => Promise<void>;
+  
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const fetchUserDocument = async (userId: string) => {
+  try {
+    const response = await databases.getDocument(
+      '6848228c00222dfaf82e',
+      '68597845003de1b5dcc0',
+      userId
+    );
+    return {
+      id: response.$id,
+      email: response.email,
+      // other fields...
+    };
+  } catch (error) {
+    console.error("Failed to fetch user document:", error);
+    return null;
+  }
+};
+
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -83,7 +103,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await AsyncStorage.setItem('session', JSON.stringify(session));
       
       const currentUser = await account.get();
-      setUser(mapUser(currentUser));
+      const userDocument = await fetchUserDocument(currentUser.$id);
+      setUser({ ...mapUser(currentUser), ...userDocument });
       
       // Refresh session every 30 minutes
       setInterval(refreshSession, 30 * 60 * 1000);
@@ -149,8 +170,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Alternative implementation using your database
       // Example: Query from your users collection
       const response = await databases.listDocuments(
-        'your-database-id',
-        'users-collection-id'
+        '6848228c00222dfaf82e', 
+      '68597845003de1b5dcc0',
       );
       return response.documents.map(doc => mapUser(doc));
     } catch (error) {
@@ -185,7 +206,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         changeUserPassword,
         fetchUsers,
         getChairman,
-        refreshSession
+        refreshSession,
       }}
     >
       {children}

@@ -12,7 +12,7 @@ import { Stack } from 'expo-router';
 const fetchDocuments = async (userRole: User['role']): Promise<DocumentItem[]> => {
   await new Promise(resolve => setTimeout(resolve, 1000));
   const allDocs: DocumentItem[] = [
-    { id: 'doc1', name: 'Q3 Financial Report.pdf', type: 'PDF', uploadedBy: 'Alice Smith (Delegate)', uploadDate: new Date(2024, 6, 20), status: 'Approved', fileUrl: '/documents/q3-financials.pdf', relatedMeeting: 'Budget Review Q3' },
+    { id: 'doc1', name: 'Q3 Financial Reports.pdf', type: 'PDF', uploadedBy: 'Alice Smith (Delegate)', uploadDate: new Date(2024, 6, 20), status: 'Approved', fileUrl: '/documents/q3-financials.pdf', relatedMeeting: 'Budget Review Q3' },
     { id: 'doc2', name: 'Project Alpha Plan.docx', type: 'Word', uploadedBy: 'Bob Johnson (Delegate)', uploadDate: new Date(2024, 6, 22), status: 'Pending Approval', fileUrl: '/documents/project-alpha.docx', relatedMeeting: 'Project Alpha Kickoff' },
     { id: 'doc3', name: 'Marketing Strategy Q4.pptx', type: 'PowerPoint', uploadedBy: 'Charlie Brown (Delegate)', uploadDate: new Date(2024, 6, 15), status: 'Approved', fileUrl: '/documents/marketing-q4.pptx' },
   ];

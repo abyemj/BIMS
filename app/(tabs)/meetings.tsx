@@ -8,6 +8,7 @@ import { format, parse } from 'date-fns';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Stack, Redirect } from 'expo-router';
 import ScheduleMeetingModal from '@/components/meetings/ScheduleMeetingModal';
+import { MeetingDetailModal } from '@/components/meetings/MeetingDetailModal';
 import { createMeeting, startMeeting, endMeeting } from '@/services/video-conferencing';
 import { sendNotification } from '@/services/notification';
 import { databases} from '@/lib/appwrite';
@@ -123,6 +124,27 @@ export default function MeetingsScreen() {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingMeeting, setEditingMeeting] = useState<Meeting | null>(null);
   const [viewingArchived, setViewingArchived] = useState(false);
+  const [detailModalVisible, setDetailModalVisible] = useState(false);
+  const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
+
+
+// useEffect(() => {
+//   const loadUsers = async () => {
+//     try {
+//       const fetchedUsers = await fetchUsers();
+//       setUsers(fetchedUsers);
+//     } catch (error) {
+//       console.error('Failed to fetch users:', error);
+//     }
+//   };
+  
+//   if (user) {
+//     loadUsers();
+//   }
+// }, [user]);
+
+
 
 
 
@@ -198,39 +220,86 @@ export default function MeetingsScreen() {
     }
   };
   
-  const fetchUsers = async (): Promise<User[]> => {
-    if (!user?.tenant) {
-      console.error('No tenant found in user');
-      return [];
-    }
+  // const fetchUsers = async (): Promise<User[]> => {
+  //   if (!user?.tenant) {
+  //     console.error('No tenant found in user');
+  //     return [];
+  //   }
   
-    try {
-      const response = await databases.listDocuments(
-        '6848228c00222dfaf82e',
-        '68597845003de1b5dcc0',
-        [
-          Query.equal('tenant', user.tenant),
-          Query.equal('status', 'Active')
-        ]
-      );
+  //   try {
+  //     const response = await databases.listDocuments(
+  //       '6848228c00222dfaf82e',
+  //       '68597845003de1b5dcc0',
+  //       [
+  //         Query.equal('tenant', user.tenant),
+  //         Query.equal('status', 'Active')
+  //       ]
+  //     );
   
-      return response.documents.map(doc => ({
-        id: doc.$id, // Database document ID
-        authId: doc.authId || doc.$id, // Include auth ID if available
-        fullName: doc.name,
-        email: doc.email,
-        phone: doc.phone,
-        role: doc.role,
-        portfolio: doc.portfolio,
-        status: doc.status,
-        avatarUrl: doc.avatarUrl || '',
-        tenant: doc.tenant
-      }));
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      return [];
-    }
-  };
+  //     return response.documents.map(doc => ({
+  //       id: doc.$id, // Database document ID
+  //       authId: doc.authId || doc.$id, // Include auth ID if available
+  //       fullName: doc.name,
+  //       email: doc.email,
+  //       phone: doc.phone,
+  //       role: doc.role,
+  //       portfolio: doc.portfolio,
+  //       status: doc.status,
+  //       avatarUrl: doc.avatarUrl || '',
+  //       tenant: doc.tenant
+  //     }));
+  //   } catch (error) {
+  //     console.error('Error fetching users:', error);
+  //     return [];
+  //   }
+  // };
+
+  // const fetchUsers = async (): Promise<{id: string; fullName: string; email: string}[]> => {
+  //   if (!user?.tenant) return [];
+    
+  //   try {
+  //     const response = await databases.listDocuments(
+  //       '6848228c00222dfaf82e',
+  //       '68597845003de1b5dcc0',
+  //       [Query.equal('tenant', user.tenant)]
+  //     );
+      
+  //     return response.documents.map(doc => ({
+  //       id: doc.$id,
+  //       fullName: doc.name,
+  //       email: doc.email
+  //     }));
+  //   } catch (error) {
+  //     console.error('Error fetching users:', error);
+  //     return [];
+  //   }
+  // };
+
+
+  // Update the fetchUsers function in your MeetingsScreen.tsx
+const fetchUsers = async (): Promise<Array<{id: string; fullName: string; email: string}>> => {
+  if (!user?.tenant) {
+    console.error('No tenant found in user');
+    return [];
+  }
+
+  try {
+    const response = await databases.listDocuments(
+      '6848228c00222dfaf82e',
+      '68597845003de1b5dcc0',
+      [Query.equal('tenant', user.tenant)]
+    );
+
+    return response.documents.map(doc => ({
+      id: doc.$id,
+      fullName: doc.name,
+      email: doc.email
+    }));
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    return [];
+  }
+};
 
   const handleScheduleMeeting = async (
     meetingData: Omit<Meeting, 'id' | 'status' | 'meetingLink' | 'attendees'> & { invitedDelegates: string[] }
@@ -465,6 +534,13 @@ export default function MeetingsScreen() {
                       <Icon name="video-outline" size={18} color={colors.primary} /><Text style={styles.actionText}>Join</Text>
                   </TouchableOpacity>
               )}
+               {item.status !== 'Archived' && item.meetingLink && (
+
+                  <TouchableOpacity onPress={() => {setSelectedMeeting(item);setDetailModalVisible(true);}} style={styles.actionButton}>
+                      <Icon name="information-outline" size={18} color={colors.muted} />
+                    <Text style={[styles.actionText, {color: colors.muted}]}>Details</Text>
+                  </TouchableOpacity>
+                )}
              {user?.role === 'Director' && item.status === 'Scheduled' && (
                   <TouchableOpacity onPress={() => openScheduleModal(item)} style={styles.actionButton}>
                        <Icon name="pencil-outline" size={18} color={colors.muted} /><Text style={[styles.actionText, {color: colors.muted}]}>Reschedule</Text>
@@ -568,6 +644,12 @@ const meetingsToDisplay = viewingArchived
               onClose={() => { setIsModalVisible(false); setEditingMeeting(null); }}
               onSchedule={handleScheduleMeeting}
               initialData={editingMeeting || undefined}
+        />
+        <MeetingDetailModal
+          visible={detailModalVisible}
+          meeting={selectedMeeting}
+          onClose={() => setDetailModalVisible(false)}
+          users={users}
         />
       </View>
     );

@@ -63,6 +63,7 @@ export const globalStyles = StyleSheet.create({
     flex: 1,
     padding: spacing.md,
     backgroundColor: colors.background,
+    marginTop: spacing.md
   },
   centered: {
     flex: 1,
@@ -93,6 +94,17 @@ export const globalStyles = StyleSheet.create({
     fontSize: 16,
     color: colors.text,
   },
+
+  
+inputPicker: {
+  marginBottom: spacing.md,
+},
+inputLabel: {
+  fontSize: 14,
+  marginBottom: spacing.xs,
+  color: colors.text,
+  fontWeight: '500',
+},
   button: {
     backgroundColor: colors.primary,
     paddingVertical: 14, // Taller buttons
@@ -147,7 +159,6 @@ export const globalStyles = StyleSheet.create({
   badgeWarningText: { color: colors.black}, // Black text for better readability on yellow
 });
 
-// Ensure your types/index.ts has these interfaces
-// export interface User { ... }
-// export interface Meeting { ... }
-// export interface DocumentItem { ... }
+
+
+

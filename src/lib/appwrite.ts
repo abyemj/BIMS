@@ -155,7 +155,17 @@
 // export const account = new Account(client);
 
 
-import { Client, Account, Databases } from 'appwrite';
+// import { Client, Account, Databases,Storage } from 'appwrite';
+
+// export const client = new Client()
+//   .setEndpoint('https://fra.cloud.appwrite.io/v1')
+//   .setProject('68482013000712591aa2');
+
+// export const account = new Account(client);
+// export const databases = new Databases(client); 
+// export const storage = new Storage(client); 
+
+import { Client, Account, Databases, Storage, } from 'appwrite';
 
 export const client = new Client()
   .setEndpoint('https://fra.cloud.appwrite.io/v1')
@@ -163,3 +173,7 @@ export const client = new Client()
 
 export const account = new Account(client);
 export const databases = new Databases(client); 
+export const storage = new Storage(client);
+
+// Add this line to export the InputFile helper class
+// export { InputFile }; 
