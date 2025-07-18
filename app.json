@@ -4,7 +4,7 @@
     "slug": "bims",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/benuelogo2.png",
+    "icon": "./assets/images/bims.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "splash": {
@@ -16,7 +16,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/benuelogo2.png",
+        "foregroundImage": "./assets/images/bims.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.BIMS.app"

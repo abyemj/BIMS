@@ -10,20 +10,23 @@
     "test": "jest"
   },
   "dependencies": {
-    "@react-native-async-storage/async-storage": "^1.23.1",
+    "@react-native-async-storage/async-storage": "1.23.1",
     "@react-native-community/datetimepicker": "8.0.1",
     "@tanstack/react-query": "^5.81.2",
     "appwrite": "^13.0.0",
     "date-fns": "^3.6.0",
     "expo": "~51.0.21",
     "expo-constants": "~16.0.2",
+    "expo-dev-client": "~4.0.29",
     "expo-document-picker": "~12.0.2",
+    "expo-linear-gradient": "~13.0.2",
     "expo-linking": "~6.3.1",
     "expo-router": "~3.5.18",
     "expo-splash-screen": "~0.27.7",
     "expo-status-bar": "~1.12.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",
+    "react-hook-form": "^7.59.0",
     "react-native": "0.74.5",
     "react-native-blob-util": "^0.22.2",
     "react-native-gesture-handler": "~2.16.1",
@@ -32,9 +35,7 @@
     "react-native-screens": "3.31.1",
     "react-native-url-polyfill": "^2.0.0",
     "react-native-vector-icons": "^10.1.0",
-    "react-native-web": "~0.19.10",
-    "expo-dev-client": "~4.0.29",
-    "expo-linear-gradient": "~13.0.2"
+    "react-native-web": "~0.19.10"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

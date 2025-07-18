@@ -97,8 +97,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // const login = async (email: string, password: string) => {
+  //   try {
+  //     const session = await account.createEmailSession(email, password);
+  //     await AsyncStorage.setItem('session', JSON.stringify(session));
+      
+  //     const currentUser = await account.get();
+  //     const userDocument = await fetchUserDocument(currentUser.$id);
+  //     setUser({ ...mapUser(currentUser), ...userDocument });
+      
+  //     // Refresh session every 30 minutes
+  //     setInterval(refreshSession, 30 * 60 * 1000);
+  //   } catch (error: any) {
+  //     console.error('Login error:', error);
+  //     await logout();
+  //     throw new Error(error.message || 'Login failed. Please try again.');
+  //   }
+  // };
+
   const login = async (email: string, password: string) => {
     try {
+      // First, try to delete any existing sessions
+      try {
+        const sessions = await account.listSessions();
+        if (sessions.sessions.length > 0) {
+          await account.deleteSession('current');
+        }
+      } catch (error) {
+        console.log('No existing session to delete');
+      }
+  
+      // Then create new session
       const session = await account.createEmailSession(email, password);
       await AsyncStorage.setItem('session', JSON.stringify(session));
       
@@ -115,15 +144,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // const logout = async () => {
+  //   try {
+  //     const sessions = await account.listSessions();
+  //     if (sessions.sessions.length > 0) {
+  //       await account.deleteSession(sessions.sessions[0].$id);
+  //     }
+  //   } catch (error) {
+  //     console.error('Logout error:', error);
+  //   } finally {
+  //     await AsyncStorage.removeItem('session');
+  //     setUser(null);
+  //   }
+  // };
+
   const logout = async () => {
     try {
-      const sessions = await account.listSessions();
-      if (sessions.sessions.length > 0) {
-        await account.deleteSession(sessions.sessions[0].$id);
-      }
+      // Delete all sessions
+      await account.deleteSessions();
+      await AsyncStorage.removeItem('session');
+      setUser(null);
     } catch (error) {
       console.error('Logout error:', error);
-    } finally {
+      // Even if logout fails, clear local state
       await AsyncStorage.removeItem('session');
       setUser(null);
     }

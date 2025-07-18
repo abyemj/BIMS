@@ -11,7 +11,7 @@ import ScheduleMeetingModal from '@/components/meetings/ScheduleMeetingModal';
 import { MeetingDetailModal } from '@/components/meetings/MeetingDetailModal';
 import { createMeeting, startMeeting, endMeeting } from '@/services/video-conferencing';
 import { sendNotification } from '@/services/notification';
-import { databases} from '@/lib/appwrite';
+import { databases,storage} from '@/lib/appwrite';
 import {Query} from 'appwrite';
 
 
@@ -58,7 +58,7 @@ const mapAppwriteToMeeting = (doc: any): Meeting => {
     status: doc.status || 'Scheduled',
     attendees: doc.attendees || [],
     invitedDelegates: doc.invitedDelegates || [],
-    documents: doc.documents || [],
+    documents: Array.isArray(doc.documents) ? doc.documents : [],
     meetingLink: doc.meetingLink,
     tenant: doc.tenant
   };
@@ -78,13 +78,14 @@ const fetchMeetingsFromDB = async (user: User): Promise<Meeting[]> => {
       ]
     );
 
-    // Then filter client-side if delegate
+   
     if (user.role === 'Delegate') {
       console.log("Fetching meetings for delegate:", user.id);
       return response.documents
         .filter(doc => {
           const attendees = doc.attendees || [];
           const invitedDelegates = doc.invitedDelegates || [];
+          console.log(attendees)
           return attendees.includes(user.id) || invitedDelegates.includes(user.id);
         })
         .map(mapAppwriteToMeeting);
@@ -127,25 +128,6 @@ export default function MeetingsScreen() {
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
   const [users, setUsers] = useState<User[]>([]);
-
-
-// useEffect(() => {
-//   const loadUsers = async () => {
-//     try {
-//       const fetchedUsers = await fetchUsers();
-//       setUsers(fetchedUsers);
-//     } catch (error) {
-//       console.error('Failed to fetch users:', error);
-//     }
-//   };
-  
-//   if (user) {
-//     loadUsers();
-//   }
-// }, [user]);
-
-
-
 
 
   const loadMeetings = useCallback(async () => {
@@ -220,153 +202,187 @@ export default function MeetingsScreen() {
     }
   };
   
-  // const fetchUsers = async (): Promise<User[]> => {
-  //   if (!user?.tenant) {
-  //     console.error('No tenant found in user');
-  //     return [];
-  //   }
+  const fetchUsers = async (): Promise<User[]> => {
+    if (!user?.tenant) {
+      console.error('No tenant found in user');
+      return [];
+    }
+  
+    try {
+      const response = await databases.listDocuments(
+        '6848228c00222dfaf82e',
+        '68597845003de1b5dcc0',
+        [
+          Query.equal('tenant', user.tenant),
+          Query.equal('status', 'Active')
+        ]
+      );
+  
+      return response.documents.map(doc => ({
+        id: doc.$id, // Database document ID
+        authId: doc.authId || doc.$id, // Include auth ID if available
+        fullName: doc.name,
+        email: doc.email,
+        phone: doc.phone,
+        role: doc.role,
+        portfolio: doc.portfolio,
+        status: doc.status,
+        avatarUrl: doc.avatarUrl || '',
+        tenant: doc.tenant
+      }));
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      return [];
+    }
+  };
+
+
+  // const handleScheduleMeeting = async (
+  //   // `meetingData` now contains the full objects from the modal
+  //   meetingData: any 
+  // ): Promise<boolean> => {
+  //   if (!user || user.role !== 'Director') return false;
   
   //   try {
-  //     const response = await databases.listDocuments(
-  //       '6848228c00222dfaf82e',
-  //       '68597845003de1b5dcc0',
-  //       [
-  //         Query.equal('tenant', user.tenant),
-  //         Query.equal('status', 'Active')
-  //       ]
-  //     );
+  //     const chairman = await getChairman();
+  //     const allAttendeeIds = new Set<string>(meetingData.invitedDelegates || []);
+  //     if (chairman) allAttendeeIds.add(chairman.id);
+  //     allAttendeeIds.add(user.id);
   
-  //     return response.documents.map(doc => ({
-  //       id: doc.$id, // Database document ID
-  //       authId: doc.authId || doc.$id, // Include auth ID if available
-  //       fullName: doc.name,
-  //       email: doc.email,
-  //       phone: doc.phone,
-  //       role: doc.role,
-  //       portfolio: doc.portfolio,
-  //       status: doc.status,
-  //       avatarUrl: doc.avatarUrl || '',
-  //       tenant: doc.tenant
-  //     }));
+  //     const videoConfDetails = await createMeeting(meetingData.title, meetingData.date, meetingData.duration);
+  
+  //     // --- THIS IS THE CRITICAL FIX ---
+  //     // `meetingData.documents` is the array of objects like [{ name: 'a.pdf', fileId: '123' }]
+  //     // We map over it to get just the `fileId` string for each document.
+  //     const documentFileIds = meetingData.documents
+  //       ?.map((doc: { fileId: string }) => doc.fileId) // Get the fileId from each object
+  //       .filter(Boolean) || [];          // Filter out any null/undefined values just in case
+  
+  //     // This is the clean object we will save to the Appwrite database
+  //     const meetingPayload = {
+  //       title: meetingData.title,
+  //       date: meetingData.date,
+  //       duration: meetingData.duration,
+  //       agenda: meetingData.agenda,
+  //       instructions: meetingData.instructions,
+  //       status: editingMeeting ? meetingData.status : 'Scheduled', // Use existing status if editing
+  //       meetingLink: videoConfDetails.joinUrl,
+  //       attendees: Array.from(allAttendeeIds),
+  //       invitedDelegates: meetingData.invitedDelegates,
+  //       tenant: user.tenant,
+  //       documents: documentFileIds, // Now contains a clean array of strings: ['id1', 'id2']
+  //     };
+  
+  //     if (editingMeeting) {
+  //       await databases.updateDocument(
+  //         '6848228c00222dfaf82e',
+  //         '685a245d0014fa92ce37',
+  //         editingMeeting.id,
+  //         meetingPayload
+  //       );
+  //       Alert.alert('Meeting Updated', `${meetingPayload.title} updated successfully.`);
+  //     } else {
+  //       await databases.createDocument(
+  //         '6848228c00222dfaf82e',
+  //         '685a245d0014fa92ce37',
+  //         'unique()',
+  //         meetingPayload
+  //       );
+  //       Alert.alert('Meeting Scheduled', `${meetingPayload.title} has been scheduled.`);
+  //     }
+  
+  //     // Refresh the meetings list to show the new/updated data
+  //     loadMeetings();
+  
+  //     try {
+  //       const allUsers = await fetchUsers();
+  //       const invitedUsers = allUsers.filter(u => allAttendeeIds.has(u.id));
+  //       for (const invited of invitedUsers) {
+  //         if (invited.id !== user.id) {
+  //           await sendNotification({
+  //             recipient: invited.email,
+  //             subject: `Meeting Invitation: ${meetingData.title}`,
+  //             body: `You've been invited to "${meetingData.title}" on ${format(meetingData.date, 'PPP')} at ${meetingData.time}. Agenda: ${meetingData.agenda}`,
+  //           });
+  //         }
+  //       }
+  //     } catch (notificationError) {
+  //       console.warn('Notification error:', notificationError);
+  //     }
+  
+  //     setEditingMeeting(null);
+  //     return true;
   //   } catch (error) {
-  //     console.error('Error fetching users:', error);
-  //     return [];
+  //     console.error("Error saving meeting:", error);
+  //     Alert.alert('Error', 'Could not save the meeting. Please try again.');
+  //     return false;
   //   }
   // };
-
-  // const fetchUsers = async (): Promise<{id: string; fullName: string; email: string}[]> => {
-  //   if (!user?.tenant) return [];
-    
-  //   try {
-  //     const response = await databases.listDocuments(
-  //       '6848228c00222dfaf82e',
-  //       '68597845003de1b5dcc0',
-  //       [Query.equal('tenant', user.tenant)]
-  //     );
-      
-  //     return response.documents.map(doc => ({
-  //       id: doc.$id,
-  //       fullName: doc.name,
-  //       email: doc.email
-  //     }));
-  //   } catch (error) {
-  //     console.error('Error fetching users:', error);
-  //     return [];
-  //   }
-  // };
-
-
-  // Update the fetchUsers function in your MeetingsScreen.tsx
-const fetchUsers = async (): Promise<Array<{id: string; fullName: string; email: string}>> => {
-  if (!user?.tenant) {
-    console.error('No tenant found in user');
-    return [];
-  }
-
-  try {
-    const response = await databases.listDocuments(
-      '6848228c00222dfaf82e',
-      '68597845003de1b5dcc0',
-      [Query.equal('tenant', user.tenant)]
-    );
-
-    return response.documents.map(doc => ({
-      id: doc.$id,
-      fullName: doc.name,
-      email: doc.email
-    }));
-  } catch (error) {
-    console.error('Error fetching users:', error);
-    return [];
-  }
-};
 
   const handleScheduleMeeting = async (
-    meetingData: Omit<Meeting, 'id' | 'status' | 'meetingLink' | 'attendees'> & { invitedDelegates: string[] }
+    meetingData: any 
   ): Promise<boolean> => {
     if (!user || user.role !== 'Director') return false;
-
+  
+    // --- DEBUGGING STEP 2 ---
+    console.log("--- PARENT: Data received from modal ---");
+    console.log(JSON.stringify(meetingData, null, 2));
+    // --- END DEBUGGING ---
+  
     try {
       const chairman = await getChairman();
-      let allAttendeeIds = new Set<string>(meetingData.invitedDelegates || []);
+      const allAttendeeIds = new Set<string>(meetingData.invitedDelegates || []);
       if (chairman) allAttendeeIds.add(chairman.id);
       allAttendeeIds.add(user.id);
-
+  
       const videoConfDetails = await createMeeting(meetingData.title, meetingData.date, meetingData.duration);
-
-      const newMeeting = {
-        ...meetingData,
-        // date: toAppwriteDate(meetingData.date),
+  
+      // --- DEBUGGING STEP 3 ---
+      // Let's check what the map operation produces.
+      const documentFileIds = meetingData.documents
+        ?.map((doc: { fileId: string }) => doc.fileId)
+        .filter(Boolean) || [];
+      console.log("--- PARENT: Extracted documentFileIds to be saved:", documentFileIds, "---");
+      // --- END DEBUGGING ---
+  
+      
+      const meetingPayload = {
+        title: meetingData.title,
         date: meetingData.date,
-        status: 'Scheduled' as const,
+        duration: meetingData.duration,
+        agenda: meetingData.agenda,
+        instructions: meetingData.instructions,
+        status: editingMeeting ? meetingData.status : 'Scheduled',
         meetingLink: videoConfDetails.joinUrl,
         attendees: Array.from(allAttendeeIds),
-        tenant: user.tenant
+        invitedDelegates: meetingData.invitedDelegates,
+        tenant: user.tenant,
+        documents: documentFileIds, // This is what gets saved
       };
-
+  
+      // --- DEBUGGING STEP 4 ---
+      console.log("--- PARENT: Final payload being sent to Appwrite ---");
+      console.log(JSON.stringify(meetingPayload, null, 2));
+      // --- END DEBUGGING ---
+  
+  
       if (editingMeeting) {
-        await databases.updateDocument(
-          '6848228c00222dfaf82e',
-          '685a245d0014fa92ce37',
-          editingMeeting.id,
-          newMeeting
-        );
-        setMeetings(prev => prev.map(m => 
-          m.id === editingMeeting.id ? mapAppwriteToMeeting({
-            ...m,
-            ...newMeeting,
-            $id: m.id, // Preserve the ID
-            // date: m.date.toISOString() // Convert back to ISO string for consistency
-            date: <Text>{formatMeetingDateTime(meetingData.date)}</Text>
-          }) : m
-        ));
-        Alert.alert('Meeting Updated', `${newMeeting.title} updated successfully.`);
+        // ... update logic
       } else {
-        const response = await databases.createDocument(
+        await databases.createDocument(
           '6848228c00222dfaf82e',
           '685a245d0014fa92ce37',
           'unique()',
-          newMeeting
+          meetingPayload
         );
-        setMeetings(prev => [mapAppwriteToMeeting(response), ...prev]);
-        Alert.alert('Meeting Scheduled', `${newMeeting.title} has been scheduled.`);
+        Alert.alert('Meeting Scheduled', `${meetingPayload.title} has been scheduled.`);
       }
-
-      const allUsers = await fetchUsers(); // Fetch all users for notifications
-            const invitedUsers = allUsers.filter(u => allAttendeeIds.has(u.id));
-            for (const invited of invitedUsers) {
-              if (invited.id !== user.id) {
-                   await sendNotification({
-                     recipient: invited.email,
-                     subject: `Meeting Invitation: ${meetingData.title}`,
-                     body: `You have been invited to the meeting "${meetingData.title}" on ${format(meetingData.date, 'PPP')} at ${meetingData.time}. Agenda: ${meetingData.agenda}`,
-                   });
-                   console.log(`RN Notification sent to ${invited.email} for meeting ${meetingData.title}`);
-              }
-            }
-            setEditingMeeting(null);
-
-
+  
+      loadMeetings();
+  
+      // ... notification logic ...
+      
+      setEditingMeeting(null);
       return true;
     } catch (error) {
       console.error("Error saving meeting:", error);
@@ -374,13 +390,13 @@ const fetchUsers = async (): Promise<Array<{id: string; fullName: string; email:
       return false;
     }
   };
+  
 
    const handleStartMeeting = async (meeting: Meeting) => {
       if (!user || user.role === 'Delegate') return;
       const url = meeting.meetingLink;
       if (url) {
           try {
-              // TODO: Update meeting status to 'Ongoing' in Appwrite
               await startMeeting(meeting.id);
               setMeetings(prev => prev.map(m => m.id === meeting.id ? { ...m, status: 'Ongoing' } : m));
               Alert.alert('Meeting Started', `${meeting.title} is now ongoing.`);
@@ -510,13 +526,23 @@ const fetchUsers = async (): Promise<Array<{id: string; fullName: string; email:
           <Text style={styles.itemDetail}><Icon name="calendar" size={14} color={colors.muted} /> {dateTime}</Text>
           <Text style={styles.itemDetail}><Icon name="clock-outline" size={14} color={colors.muted} /> {item.duration} mins</Text>
           <Text style={styles.itemAgenda}>{item.agenda}</Text>
+          
           {item.instructions && <Text style={styles.itemDetailSmall}><Icon name="information-outline" size={14} color={colors.muted} /> {item.instructions}</Text>}
+          
+
           {item.documents && item.documents.length > 0 && (
-              <View style={{marginTop: spacing.xs}}>
-                  <Text style={styles.itemDetailSmall}><Icon name="paperclip" size={14} color={colors.muted} /> Documents:</Text>
-                  {item.documents.map((doc, idx) => <Text key={idx} style={[styles.itemDetailSmall, { marginLeft: spacing.md }]}>- {doc.name}</Text>)}
-              </View>
+            <View style={{marginTop: spacing.xs}}>
+              <Text style={styles.itemDetailSmall}>
+                <Icon name="paperclip" size={14} color={colors.muted} /> Documents attached: {item.documents.length}
+              </Text>
+              {/* Displaying IDs here is fine for a brief summary */}
+            </View>
           )}
+
+          <TouchableOpacity onPress={() => {setSelectedMeeting(item);setDetailModalVisible(true);}} style={styles.actionButton}>
+            <Icon name="information" size={18} color={colors.muted} />
+            <Text style={[styles.actionText, {color: colors.muted}]}>Details</Text>
+          </TouchableOpacity>
   
            <View style={styles.actionsContainer}>
              {user?.role === 'Director' && item.status === 'Scheduled' && (
@@ -534,13 +560,6 @@ const fetchUsers = async (): Promise<Array<{id: string; fullName: string; email:
                       <Icon name="video-outline" size={18} color={colors.primary} /><Text style={styles.actionText}>Join</Text>
                   </TouchableOpacity>
               )}
-               {item.status !== 'Archived' && item.meetingLink && (
-
-                  <TouchableOpacity onPress={() => {setSelectedMeeting(item);setDetailModalVisible(true);}} style={styles.actionButton}>
-                      <Icon name="information-outline" size={18} color={colors.muted} />
-                    <Text style={[styles.actionText, {color: colors.muted}]}>Details</Text>
-                  </TouchableOpacity>
-                )}
              {user?.role === 'Director' && item.status === 'Scheduled' && (
                   <TouchableOpacity onPress={() => openScheduleModal(item)} style={styles.actionButton}>
                        <Icon name="pencil-outline" size={18} color={colors.muted} /><Text style={[styles.actionText, {color: colors.muted}]}>Reschedule</Text>
@@ -561,8 +580,6 @@ const fetchUsers = async (): Promise<Array<{id: string; fullName: string; email:
       );
     };
   
-    // const meetingsToDisplay = viewingArchived ? archivedMeetings : meetings;
-    // In your meetings.tsx component
 const meetingsToDisplay = viewingArchived 
 ? archivedMeetings
 : meetings.filter(meeting => {

@@ -137,11 +137,12 @@
 
 import React from 'react';
 import { Slot } from 'expo-router';
-import { AuthProvider } from '@/context/AuthContext';
+import { AuthProvider, useProtectedRoute} from '@/context/AuthContext';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 function RootLayoutNav() {
+  useProtectedRoute();
   return <Slot />;
 }
 
